@@ -19,14 +19,11 @@
 
             item.on('hover:enter', function () {
                 Lampa.Activity.push({
-                    url: 'tv',
+                    url: 'movie&with_genres=16&with_original_language=ja',
                     title: 'Аниме',
                     component: 'category',
                     source: 'tmdb',
-                    page: 1,
-                    genres: 16,
-                    with_original_language: 'ja',
-                    sort_by: 'popularity.desc'
+                    page: 1
                 });
             });
 
