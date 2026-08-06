@@ -6,9 +6,9 @@
         window.anime_catalog = true;
 
         function add() {
-            if ($('.menu__item[data-action="anime"]').length) return;
+            if ($('.menu__item[data-action="anime_custom"]').length) return;
 
-            var html = '<li class="menu__item selector" data-action="anime">' +
+            var html = '<li class="menu__item selector" data-action="anime_custom">' +
                 '<div class="menu__ico">' +
                 '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>' +
                 '</div>' +
@@ -19,11 +19,16 @@
 
             item.on('hover:enter', function () {
                 Lampa.Activity.push({
-                    url: 'movie&with_genres=16&with_original_language=ja',
+                    url: '',
                     title: 'Аниме',
                     component: 'category',
                     source: 'tmdb',
-                    page: 1
+                    page: 1,
+                    query: '',
+                    genres: '16',
+                    with_original_language: 'ja',
+                    sort_by: 'popularity.desc',
+                    type: 'tv'
                 });
             });
 
