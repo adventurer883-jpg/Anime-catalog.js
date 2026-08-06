@@ -1,47 +1,113 @@
 (function () {
     'use strict';
 
-    function startPlugin() {
-        if (window.anime_catalog) return;
-        window.anime_catalog = true;
+    Lampa.Platform.tv();
 
-        function add() {
-            if ($('.menu__item[data-action="anime_custom"]').length) return;
+    // TMDB TV-жанры, актуальные для аниме (Animation + доп. жанр)
+    var genres = [
+        { title: 'Экшен / Приключения', id: 10759 },
+        { title: 'Комедия', id: 35 },
+        { title: 'Драма', id: 18 },
+        { title: 'Фэнтези / Фантастика', id: 10765 },
+        { title: 'Детектив / Мистика', id: 9648 },
+        { title: 'Семейное', id: 10751 }
+    ];
 
-            var html = '<li class="menu__item selector" data-action="anime_custom">' +
-                '<div class="menu__ico">' +
-                '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>' +
-                '</div>' +
-                '<div class="menu__text">Аниме</div>' +
-                '</li>';
+    var icon = '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><path fill="currentColor" fill-rule="evenodd" d="m368.256 214.573l-102.627 187.35c40.554 71.844 73.647 97.07 138.664 94.503c63.67-2.514 136.974-89.127 95.694-163.243L397.205 150.94c-3.676 12.266-25.16 55.748-28.95 63.634M216.393 440.625C104.077 583.676-57.957 425.793 20.85 302.892c0 0 83.895-147.024 116.521-204.303c25.3-44.418 53.644-72.37 90.497-81.33c44.94-10.926 97.565 12.834 125.62 56.167c19.497 30.113 36.752 57.676 6.343 109.738c-3.613 6.184-136.326 248.402-143.438 257.46m8.014-264.595c-30.696-17.696-30.696-62.177 0-79.873s69.273 4.544 69.273 39.936s-38.578 57.633-69.273 39.937" clip-rule="evenodd"/></svg>';
 
-            var item = $(html);
-
-            item.on('hover:enter', function () {
-                Lampa.Activity.push({
-                    url: '',
-                    title: 'Аниме',
-                    component: 'category',
-                    source: 'tmdb',
-                    page: 1,
-                    query: '',
-                    genres: '16',
-                    with_original_language: 'ja',
-                    sort_by: 'popularity.desc',
-                    type: 'tv'
-                });
-            });
-
-            $('.menu .menu__list').eq(0).append(item);
-        }
-
-        if (window.appready) add();
-        else {
-            Lampa.Listener.follow('app', function (e) {
-                if (e.type == 'ready') add();
-            });
-        }
+    // Открыть готовую страницу-сетку Lampa (category_full) с заданным discover-запросом
+    function openGrid(title, url) {
+        Lampa.Activity.push({
+            url: url,
+            title: title,
+            component: 'category_full',
+            source: 'tmdb',
+            card_type: 'true',
+            page: 1
+        });
     }
 
-    startPlugin();
+    function baseAnimeFilter() {
+        return 'with_original_language=ja&with_genres=16';
+    }
+
+    // Подменю разделов вместо одной бесконечной ленты
+    function showAnimeMenu() {
+        var items = [
+            { title: 'Топ рейтинга', action: 'top' },
+            { title: 'Популярное', action: 'popular' },
+            { title: 'ТВ-сериалы', action: 'tv' },
+            { title: 'Полнометражные фильмы', action: 'movie' },
+            { title: 'Жанры', action: 'genres' }
+        ];
+
+        Lampa.Select.show({
+            title: 'Аниме',
+            items: items,
+            onSelect: function (item) {
+                if (item.action === 'top') {
+                    openGrid('Аниме / Топ рейтинга',
+                        'discover/tv?' + baseAnimeFilter() +
+                        '&sort_by=vote_average.desc&vote_count.gte=100');
+                }
+                else if (item.action === 'popular') {
+                    openGrid('Аниме / Популярное',
+                        'discover/tv?' + baseAnimeFilter() +
+                        '&sort_by=popularity.desc');
+                }
+                else if (item.action === 'tv') {
+                    openGrid('Аниме / ТВ-сериалы',
+                        'discover/tv?' + baseAnimeFilter() +
+                        '&sort_by=first_air_date.desc');
+                }
+                else if (item.action === 'movie') {
+                    openGrid('Аниме / Полнометражные',
+                        'discover/movie?with_original_language=ja&with_genres=16' +
+                        '&sort_by=popularity.desc');
+                }
+                else if (item.action === 'genres') {
+                    showGenresMenu();
+                }
+            },
+            onBack: function () {
+                Lampa.Controller.toggle('menu');
+            }
+        });
+    }
+
+    function showGenresMenu() {
+        var items = genres.map(function (g) {
+            return { title: g.title, id: g.id };
+        });
+
+        Lampa.Select.show({
+            title: 'Аниме / Жанры',
+            items: items,
+            onSelect: function (item) {
+                openGrid('Аниме / ' + item.title,
+                    'discover/tv?' + baseAnimeFilter() + ',' + item.id +
+                    '&sort_by=popularity.desc');
+            },
+            onBack: function () {
+                showAnimeMenu();
+            }
+        });
+    }
+
+    function addButton() {
+        var button = $(
+            '<li class="menu__item selector" data-action="anime_tmdb">' +
+            '<div class="menu__ico">' + icon + '</div>' +
+            '<div class="menu__text">Аниме</div></li>'
+        );
+
+        button.on('hover:enter', showAnimeMenu);
+
+        $('.menu .menu__list').eq(0).append(button);
+    }
+
+    if (window.appready) addButton();
+    else Lampa.Listener.follow('app', function (e) {
+        if (e.type === 'ready') addButton();
+    });
 })();
